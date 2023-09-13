@@ -1,0 +1,227 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Symptom Checker</title>
+    <style>
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.2);
+            background-color: #fff;
+        }
+
+        h1 {
+            text-align: center;
+            font-size: 24px;
+            margin-bottom: 20px;
+            color: #333;
+        }
+
+        input[type="text"] {
+            width: 90%;
+            padding: 10px;
+            margin-bottom: 10px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+        }
+
+        button {
+            background-color: #007bff;
+            color: #fff;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+
+        button:hover {
+            background-color: #a32363;
+        }
+
+        ul {
+            list-style-type: none;
+            padding: 0;
+        }
+
+        li {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 10px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            margin-bottom: 5px;
+            background-color: #f18181;
+        }
+
+        .delete-btn {
+            color: #ff3333;
+            font-weight: bold;
+            cursor: pointer;
+            margin-right: 5px;
+        }
+
+        .question {
+            font-weight: bold;
+        }
+
+        /* Flashing messages */
+        .emergency-flash {
+            animation-duration: 1s;
+            animation-iteration-count: infinite;
+            animation-name: flash-red;
+        }
+
+        .wait-and-see-flash {
+            animation-duration: 1s;
+            animation-iteration-count: infinite;
+            animation-name: flash-blue;
+        }
+
+        .see-your-gp-flash {
+            animation-duration: 1s;
+            animation-iteration-count: infinite;
+            animation-name: flash-orange;
+        }
+
+        @keyframes flash-red {
+            0%, 100% {
+                background-color: white;
+                color: red;
+            }
+            50% {
+                background-color: red;
+                color: white;
+            }
+        }
+
+        @keyframes flash-blue {
+            0%, 100% {
+                background-color: white;
+                color: lightblue;
+            }
+            50% {
+                background-color: lightblue;
+                color: white;
+            }
+        }
+
+        @keyframes flash-orange {
+            0%, 100% {
+                background-color: white;
+                color: orange;
+            }
+            50% {
+                background-color: orange;
+                color: white;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container" id="app">
+        <h1>Symptom Checker</h1>
+        <div class="disclaimer" v-if="!agreed">
+            <p><strong>Disclaimer:</strong> This symptom checker is for informational purposes only and is not a substitute for professional medical advice. 
+                If you are experiencing a medical emergency, please call 000 or go to the nearest emergency room.</p>
+            <button @click="startChecker">Agree</button>
+        </div>
+        <div v-if="agreed && step === 0">
+            <div class="question">Enter your symptom:</div>
+            <input type="text" v-model="symptom" placeholder="Enter your symptom...">
+            <button @click="nextStep">Next</button>
+        </div>
+        <div v-else-if="step === 1">
+            <div class="question">How long have you had this symptom?</div>
+            <input type="text" v-model="duration" placeholder="in days">
+            <button @click="nextStep">Next</button>
+        </div>
+        <div v-else-if="step === 2">
+            <div class="question">Do you have vertigo?</div>
+            <label><input type="radio" v-model="vertigo" value="Yes">Yes</label>
+            <label><input type="radio" v-model="vertigo" value="No">No</label>
+            <button @click="nextStep">Next</button>
+        </div>
+        <div v-else-if="step === 3">
+            <div class="question">Do you have fever?</div>
+            <label><input type="radio" v-model="fever" value="Yes">Yes</label>
+            <label><input type="radio" v-model="fever" value="No">No</label>
+            <button @click="nextStep">Next</button>
+        </div>
+        <div v-else-if="step === 4">
+            <div class="question">Have you had trauma to the head?</div>
+            <label><input type="radio" v-model="trauma" value="Yes">Yes</label>
+            <label><input type="radio" v-model="trauma" value="No">No</label>
+            <button @click="checkSymptoms">Next</button>
+        </div>
+        <div v-else>
+            <div :class="outcomeClass">
+                <h2>{{ outcome }}</h2>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/vue@3.2.0/dist/vue.global.min.js"></script>
+    <script>
+        const app = Vue.createApp({
+            data() {
+                return {
+                    agreed: false,
+                    symptom: "",
+                    duration: "",
+                    step: 0,
+                    vertigo: "",
+                    fever: "",
+                    trauma: "",
+                    outcome: "",
+                };
+            },
+            computed: {
+                outcomeClass() {
+                    return this.outcome === "Go to Emergency"
+                        ? "emergency-flash"
+                        : this.outcome === "Wait and see"
+                            ? "wait-and-see-flash"
+                            : this.outcome === "See your GP"
+                                ? "see-your-gp-flash"
+                                : "";
+                },
+            },
+            methods: {
+                nextStep() {
+                    this.step++;
+                },
+                startChecker() {
+                    this.agreed = true;
+                },
+                checkSymptoms() {
+                    if (this.duration < 5 && this.fever === 'Yes' && this.vertigo === 'Yes') {
+                        this.outcome = "Go to Emergency";
+                    } else if (this.duration >= 5 && this.fever === 'Yes' && this.vertigo === 'Yes') {
+                        this.outcome = "See your GP";
+                    } else if (this.fever === 'Yes' && this.trauma === 'Yes') {
+                        this.outcome = "Go to Emergency";
+                    } else if (this.fever === 'Yes') {
+                        this.outcome = "See your GP";
+                    } else if (this.trauma === 'Yes') {
+                        this.outcome = "Wait and see";
+                    } else {
+                        this.outcome = "Wait and see";
+                    }
+                    this.step++;
+                },
+            },
+        });
+
+        app.mount('#app');
+    </script>
+</body>
+
+</html>
